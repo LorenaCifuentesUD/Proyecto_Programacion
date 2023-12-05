@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="utf-8">
+  <title>My first three.js app</title>
+  <style>
+    body { margin: 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/build/three.min.js"></script>
+</head>
+<body>
+  <script type="module">
+
+    var X = 0;
+    var Y = 0;
+    var Z = 0;
+    var ALPHA = 0;
+    var BETA = 0;
+    var GAMMA = 0;
+    var T = 0;
+
+    if (window.DeviceMotionEvent) {
+      window.addEventListener('devicemotion', function (event) {
+        X += event.acceleration.x;
+        Y += event.acceleration.y;
+        Z += event.acceleration.z;
+        T += event.interval;
+      });
+    } else {
+      console.log('El dispositivo no admite el acelerómetro.');
+    }
+
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', function (event) {
+        ALPHA += event.alpha;
+        BETA += event.beta;
+        GAMMA += event.gamma;
+      });
+    } else {
+      console.log('El dispositivo no admite el acelerómetro.');
+    }
+
+    var scene = new THREE.Scene();
+    var aspect = window.innerWidth / window.innerHeight;
+    var camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+    camera.position.z = 5;
+    camera.position.x = 7;
+    camera.position.y = 5;
+    camera.lookAt(0, 1.5, 0);
+    camera.updateProjectionMatrix();
+
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var material = new THREE.MeshStandardMaterial();
+    var geometry = new THREE.BoxGeometry(1.5, 0.5, 1.5);
+    var base = new THREE.Mesh(geometry, material);
+    scene.add(base);
+
+    var shoulder = new THREE.Object3D();
+    shoulder.translateY(0.5);
+    base.add(shoulder);
+
+    geometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+    var lowerArm = new THREE.Mesh(geometry, material);
+    lowerArm.translateY(1);
+    shoulder.add(lowerArm);
+
+    var elbow = new THREE.Object3D();
+    elbow.translateY(0.5);
+    lowerArm.add(elbow); 
+
+    geometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+    var Arm = new THREE.Mesh(geometry, material);
+    Arm.translateY(1);
+    elbow.add(Arm); 
+
+    var light = new THREE.DirectionalLight(0xffffff, 1.0);
+    light.position.set(10, 5, 10);
+    light.target = base;
+    scene.add(light);
+
+    light = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(light);
+
+    var zAxis = new THREE.Vector3(0, 0, 1);
+    var yAxis = new THREE.Vector3(0, 1, 0);
+
+    var GAMMA1 = 30;
+    var X1 = 45;
+
+    function animateArm(points) {
+      let index = 0;
+
+      function animate() {
+        if (index < points.length) {
+          const point = points[index];
+
+          base.setRotationFromAxisAngle(yAxis, point.th1);
+          shoulder.setRotationFromAxisAngle(zAxis, point.th2);
+          elbow.setRotationFromAxisAngle(zAxis, point.th3);
+
+          renderer.render(scene, camera);
+
+          index++;
+          requestAnimationFrame(animate);
+        }
+      }
+
+      animate();
+    }
+    function moverShoulder(startPoint, endPoint, numSteps){
+        
+    }
+    function calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps) {
+      const results = [];
+      const a1 = 1; // Longitud del primer segmento
+      const a2 = 2; // Longitud del segundo segmento
+      const a3 = 2; // Longitud del tercer segmento
+
+      for (let i = 0; i <= numSteps; i++) {
+        const t = i / numSteps;
+        const x = (1 - t) * startPoint.x + t * endPoint.x;
+        const y = (1 - t) * startPoint.y + t * endPoint.y;
+        const z = (1 - t) * startPoint.z + t * endPoint.z;
+
+        const th1 = Math.atan2(z, x);
+        const r1 = Math.sqrt(x ** 2 + z ** 2);
+        const r2 = y - a1;
+        const phi2 = Math.atan2(r2, r1);
+        const r3 = Math.sqrt(r1 ** 2 + r2 ** 2);
+        const phi1 = Math.acos((a3 ** 2 - a2 ** 2 - r3 ** 2) / (-2 * a2 * r3));
+        const th2 = phi2 - phi1;
+        const phi3 = Math.acos((r3 ** 2 - a2 ** 2 - a3 ** 2) / (-2 * a2 * a3));
+        const th3 = Math.PI - phi3;
+
+        results.push({ th1, th2, th3 });
+      }
+
+      return results;
+    }
+
+
+    // points = { x: 0, y: 0, z: 0};
+    const punto = {x: 0, y: 0, z: 0};
+
+    function oneAnimation(){
+        const startPoint = { x: 2, y: 2, z: 3 };
+        const endPoint = { x: 0, y: 3, z: 0.5 };
+        const numSteps = 60;
+
+        const points = calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps);
+        animateArm(points);
+    }    
+    function twoAnimation(){
+        const startPoint = { x: 0, y: 3, z: 0.5 };
+        const endPoint = { x: 0, y: 4, z: 0.5 };
+        const numSteps = 60;
+
+        const points = calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps);
+        animateArm(points);
+    }    
+    function threeAnimation(){
+        const startPoint = { x: 0, y: 4, z: 0.5 };
+        const endPoint = { x: -0.5, y: 4.2, z: 0.5 };
+        const numSteps = 60;
+
+        const points = calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps);
+        animateArm(points);
+    }    
+    function fourAnimation(){
+        const startPoint = { x: -0.5, y: 4.2, z: 0.5 };
+        const endPoint = { x: -0.5, y: 3, z: 0.5 };
+        const numSteps = 60;
+
+        const points = calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps);
+        animateArm(points);
+    }   
+    function fiveAnimation(){
+        const startPoint = { x: -0.5, y: 3, z: 0.5 };
+        const endPoint = { x: 0, y: 3, z: 0.5 };
+        const numSteps = 60;
+
+        const points = calcularYMostrarAngulosYCoordenadas(startPoint, endPoint, numSteps);
+        animateArm(points);
+    }
+    oneAnimation();
+    setTimeout(twoAnimation,1500);
+    setTimeout(threeAnimation,3000);
+    setTimeout(fourAnimation,4500);
+    setTimeout(fiveAnimation, 6000);
+  </script>
+</body>
+</html>
